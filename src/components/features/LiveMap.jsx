@@ -1,23 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin, Truck } from 'lucide-react';
 
-const LiveMap = ({ status }) => {
-    const [progress, setProgress] = useState(0);
-
-    useEffect(() => {
-        // Reset progress when component mounts
-        setProgress(0);
-
-        // Simulate movement
-        const interval = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 100) return 0; // Loop for demo
-                return prev + 0.5;
-            });
-        }, 100);
-
-        return () => clearInterval(interval);
-    }, []);
+const LiveMap = ({ status, isLive, progress }) => {
+    // If not live, showing a static "Offline" view or just empty
+    if (!isLive) {
+        return (
+            <div className="w-full h-[300px] bg-gray-100 rounded-xl border border-gray-200 flex flex-col items-center justify-center text-gray-400">
+                <div className="bg-gray-200 p-4 rounded-full mb-3">
+                    <Truck className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="font-medium">Provider is offline</p>
+                <p className="text-sm">Location tracking will start when delivery begins.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="relative w-full h-[300px] bg-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">

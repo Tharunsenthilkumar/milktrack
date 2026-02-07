@@ -3,13 +3,60 @@ import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '../../components/common/UI';
 import { CheckCheck, MapPin, Truck } from 'lucide-react';
+import RealMap from '../../components/features/RealMap';
 
 const RouteDeliveries = () => {
     const { user } = useAuth();
-    const { getProviderRequests, markDelivered } = useData();
+    const { getProviderRequests, markDelivered, startGpsSimulation, stopGpsSimulation, updateGpsProgress, getProviderStatus } = useData();
     const [deliveringId, setDeliveringId] = useState(null);
 
+    const providerStatus = getProviderStatus(user.providerId);
+    const isLive = providerStatus?.isLive;
+
+    // Handle Simulation Interval
+    React.useEffect(() => {
+        let interval;
+        if (isLive) {
+            interval = setInterval(() => {
+                updateGpsProgress(user.providerId);
+            }, 2000); // Move every 2 seconds
+        }
+        return () => clearInterval(interval);
+    }, [isLive, user.providerId]);
+
+    const toggleSimulation = () => {
+        if (isLive) {
+            stopGpsSimulation(user.providerId);
+        } else {
+            startGpsSimulation(user.providerId);
+        }
+    };
+
+    // Prepare Map Data
+    const mapMarkers = [
+        // Provider is the Truck
+        {
+            id: 'provider',
+            lat: providerStatus.lat || 12.9716,
+            lng: providerStatus.lng || 77.5946,
+            type: 'provider',
+            title: 'Your Live Location'
+        }
+    ];
+
+    // Add Customers as markers
     const requests = getProviderRequests(user.providerId);
+    // For demo, we scatter them around the start point
+    const customerMarkers = requests.map((req, i) => ({
+        id: req.id,
+        lat: 12.9716 + (Math.random() * 0.01 - 0.005),
+        lng: 77.5946 + (Math.random() * 0.01 - 0.005),
+        type: 'customer',
+        title: req.customerName
+    }));
+
+    const allMarkers = [...mapMarkers, ...customerMarkers];
+
     const sortedRequests = requests.sort((a, b) => {
         // Sort: Pending first, then Delivered
         if (a.status === b.status) return 0;
@@ -29,12 +76,32 @@ const RouteDeliveries = () => {
         <div className="space-y-6">
             <header className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-900">Today's Route</h1>
-                <Button>
-                    <Truck className="h-4 w-4 mr-2" /> Start GPS Simulation
+                <Button
+                    variant={isLive ? "danger" : "primary"}
+                    onClick={toggleSimulation}
+                >
+                    <Truck className="h-4 w-4 mr-2" />
+                    {isLive ? "Stop GPS Simulation" : "Start GPS Simulation"}
                 </Button>
             </header>
 
             <div className="grid gap-4">
+                {/* Map Section */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-gray-900 flex items-center gap-2">
+                            <MapPin className="h-5 w-5" /> Live Map Route
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <RealMap
+                            isLive={isLive}
+                            markers={allMarkers}
+                            center={[providerStatus.lat || 12.9716, providerStatus.lng || 77.5946]}
+                        />
+                    </CardContent>
+                </Card>
+
                 {sortedRequests.length === 0 ? (
                     <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
                         <p className="text-gray-500">No deliveries scheduled for today yet.</p>

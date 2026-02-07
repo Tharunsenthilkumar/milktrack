@@ -13,6 +13,17 @@ export const DataProvider = ({ children }) => {
     const [deliveryHistory, setDeliveryHistory] = useState([]);
     const [extraRequests, setExtraRequests] = useState([]);
     const [stock, setStock] = useState(0);
+    const [providerStatuses, setProviderStatuses] = useState({});
+    // { providerId: { isLive: boolean, lat: number, lng: number, routeStep: number } }
+
+    // Mock Route (Bangalore - Indiranagar area)
+    const MOCK_ROUTE = [
+        [12.9716, 77.5946], // Start (MG Road)
+        [12.9730, 77.5960],
+        [12.9750, 77.5980],
+        [12.9780, 77.6010],
+        [12.9800, 77.6050], // End (Indiranagar)
+    ];
 
     // Load initial data
     useEffect(() => {
@@ -30,10 +41,12 @@ export const DataProvider = ({ children }) => {
         const allHistory = JSON.parse(localStorage.getItem('milktrack_history') || '[]');
         const allExtra = JSON.parse(localStorage.getItem('milktrack_extra_requests') || '[]');
         const stocks = JSON.parse(localStorage.getItem('milktrack_stocks') || '{}');
+        const statuses = JSON.parse(localStorage.getItem('milktrack_provider_statuses') || '{}');
 
         setTodaysRequests(allRequests);
         setDeliveryHistory(allHistory);
         setExtraRequests(allExtra);
+        setProviderStatuses(statuses);
 
         if (user?.role === 'provider') {
             setStock(stocks[user.id] || 0);
@@ -152,6 +165,58 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    // GPS Simulation Logic
+    const startGpsSimulation = (providerId) => {
+        const statuses = JSON.parse(localStorage.getItem('milktrack_provider_statuses') || '{}');
+        statuses[providerId] = {
+            isLive: true,
+            lat: MOCK_ROUTE[0][0],
+            lng: MOCK_ROUTE[0][1],
+            routeStep: 0,
+            lastUpdate: Date.now()
+        };
+        localStorage.setItem('milktrack_provider_statuses', JSON.stringify(statuses));
+        setProviderStatuses(statuses);
+    };
+
+    const stopGpsSimulation = (providerId) => {
+        const statuses = JSON.parse(localStorage.getItem('milktrack_provider_statuses') || '{}');
+        if (statuses[providerId]) {
+            statuses[providerId].isLive = false;
+        }
+        localStorage.setItem('milktrack_provider_statuses', JSON.stringify(statuses));
+        setProviderStatuses(statuses);
+    };
+
+    const updateGpsProgress = (providerId) => {
+        const statuses = JSON.parse(localStorage.getItem('milktrack_provider_statuses') || '{}');
+        const status = statuses[providerId];
+
+        if (status && status.isLive) {
+            let nextStep = (status.routeStep || 0) + 1;
+            if (nextStep >= MOCK_ROUTE.length) nextStep = 0; // Loop
+
+            // Smooth Interpolation would happen here, but for now we jump points
+            // For smoother demo, we can just use the exact points from array
+
+            statuses[providerId] = {
+                ...status,
+                routeStep: nextStep,
+                lat: MOCK_ROUTE[nextStep][0],
+                lng: MOCK_ROUTE[nextStep][1],
+                lastUpdate: Date.now()
+            };
+
+            localStorage.setItem('milktrack_provider_statuses', JSON.stringify(statuses));
+            setProviderStatuses(statuses);
+        }
+    };
+
+    // Helper to get status
+    const getProviderStatus = (providerId) => {
+        return providerStatuses[providerId] || { isLive: false, lat: 12.9716, lng: 77.5946 };
+    };
+
     // Get functions for UI to filter
     const getCustomerRequests = (customerId) => {
         return todaysRequests.filter(r => r.customerId === customerId);
@@ -177,6 +242,10 @@ export const DataProvider = ({ children }) => {
             requestExtraMilk,
             handleExtraRequest,
             markDelivered,
+            startGpsSimulation,
+            stopGpsSimulation,
+            updateGpsProgress,
+            getProviderStatus,
             getCustomerRequests,
             getProviderRequests,
             getProviderExtraRequests,

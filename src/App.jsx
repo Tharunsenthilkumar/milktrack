@@ -12,7 +12,9 @@ import Landing from './pages/Landing';
 import CustomerDashboard from './pages/customer/Dashboard';
 import RequestMilk from './pages/customer/RequestMilk';
 import CustomerHistory from './pages/customer/History';
+import CustomerHistory from './pages/customer/History';
 import CustomerProfile from './pages/customer/Profile';
+import ProviderPublicProfile from './pages/customer/ProviderPublicProfile';
 
 // Provider Pages (Placeholders)
 import ProviderDashboard from './pages/provider/Dashboard';
@@ -59,6 +61,11 @@ function App() {
             <Route path="/customer/profile" element={
                 <ProtectedRoute allowedRole="customer">
                     <CustomerProfile />
+                </ProtectedRoute>
+            } />
+            <Route path="/customer/provider-profile/:id" element={
+                <ProtectedRoute allowedRole="customer">
+                    <ProviderPublicProfile />
                 </ProtectedRoute>
             } />
 

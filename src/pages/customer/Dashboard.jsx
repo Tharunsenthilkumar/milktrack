@@ -2,17 +2,43 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../../components/common/UI';
-import LiveMap from '../../components/features/LiveMap';
+import RealMap from '../../components/features/RealMap';
 import { Plus, Coffee } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
     const { user } = useAuth();
-    const { todaysRequests } = useData();
+    const { todaysRequests, getProviderStatus, refreshData } = useData();
+
+    // Poll for updates
+    React.useEffect(() => {
+        const interval = setInterval(() => {
+            refreshData();
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const providerStatus = user.selectedProviderId ? getProviderStatus(user.selectedProviderId) : { isLive: false, lat: 12.9716, lng: 77.5946 };
 
     // Find today's request
     const todayStr = new Date().toISOString().split('T')[0];
     const myRequest = todaysRequests.find(r => r.customerId === user.id && r.date === todayStr);
+
+    // Map Markers
+    const markers = [];
+    // 1. User Location (Fixed for demo)
+    markers.push({ id: 'me', lat: 12.9750, lng: 77.5980, type: 'customer', title: 'My Home' });
+
+    // 2. Provider Location
+    if (providerStatus && providerStatus.lat) {
+        markers.push({
+            id: 'provider',
+            lat: providerStatus.lat,
+            lng: providerStatus.lng,
+            type: 'provider',
+            title: 'Milk Provider'
+        });
+    }
 
     return (
         <div className="space-y-6">
@@ -32,12 +58,16 @@ const Dashboard = () => {
             <Card className="overflow-hidden border-indigo-100">
                 <CardHeader className="bg-gradient-to-r from-indigo-50 to-white border-b border-indigo-50">
                     <CardTitle className="text-indigo-900 flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <div className={`w-2 h-2 rounded-full ${providerStatus.isLive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
                         Live Delivery Tracking
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <LiveMap status={myRequest?.status === 'delivered' ? 'Arrived' : 'On the Way'} />
+                    <RealMap
+                        isLive={providerStatus.isLive}
+                        markers={markers}
+                        center={[12.9730, 77.5960]} // Center between them
+                    />
                 </CardContent>
             </Card>
 
@@ -61,8 +91,8 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full ${myRequest.status === 'delivered'
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-yellow-100 text-yellow-800'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-yellow-100 text-yellow-800'
                                         }`}>
                                         {myRequest.status === 'delivered' ? 'Delivered' : 'Pending'}
                                     </span>
@@ -99,9 +129,11 @@ const Dashboard = () => {
                                 <p className="text-sm text-gray-500">Contact your provider for support</p>
                             </div>
                         </div>
-                        <Button variant="ghost" className="w-full justify-start text-xs text-gray-500">
-                            View Full Profile
-                        </Button>
+                        <Link to={`/customer/provider-profile/${user.selectedProviderId}`}>
+                            <Button variant="ghost" className="w-full justify-start text-xs text-gray-500">
+                                View Full Profile
+                            </Button>
+                        </Link>
                     </CardContent>
                 </Card>
             </div>
