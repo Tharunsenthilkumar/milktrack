@@ -12,7 +12,6 @@ import Landing from './pages/Landing';
 import CustomerDashboard from './pages/customer/Dashboard';
 import RequestMilk from './pages/customer/RequestMilk';
 import CustomerHistory from './pages/customer/History';
-import CustomerHistory from './pages/customer/History';
 import CustomerProfile from './pages/customer/Profile';
 import ProviderPublicProfile from './pages/customer/ProviderPublicProfile';
 
