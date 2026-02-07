@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+  }
+}
+
+/* Custom animations for the mock map */
+@keyframes driver-move {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(50px, 20px); }
+  50% { transform: translate(100px, 0px); }
+  75% { transform: translate(150px, 40px); }
+  100% { transform: translate(200px, 10px); }
+}
+
+.driver-marker {
+  transition: all 1s linear;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
